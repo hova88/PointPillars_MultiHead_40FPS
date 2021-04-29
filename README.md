@@ -1,10 +1,14 @@
 # PointPillars
-在GTX 2070的设备下，使用FP16模式的trt模型，前向推理一次耗时小于 **16** ms
- - 1. 取消了手动生成`anchors`的步骤， 将其直接放置在`backbone`中，简化操作，充分利用半精度特性加速推理,但是真是提速了多少？好像并没有 。 
- - 2. 使用与[OpenPCDent]()完全相同的[配置文件(pp_0.2_20_6cls.yaml)](./pointpillars/cfgs/pp_0.2_20_6cls.yaml)构建网络,简便部署 。（但是目前[后处理](./pointpillars/postprocess.cu)里面对`multihead`的使用是写死的，所以目前还是个“花把式”，不实用。
+高度优化的点云目标检测网络[PointPillars]。主要通过tensorrt对网络推理段进行了优化，通过cuda/c++对前处理后处理进行了优化。做到了真正的事实处理（前处理+后处理小于3ms）。
 
-## Overview
+## Major Advance
+- **训练简单**
+  
+    本仓库直接使用[**mmlab/OpenPCdet**](https://github.com/open-mmlab/OpenPCDet)进行训练。所以只要你按照[**官方教程**](https://github.com/open-mmlab/OpenPCDet/blob/master/docs/GETTING_STARTED.md)的教程是非常容易训练自己的数据，也可以直接采用[**官方训练参数**](https://github.com/open-mmlab/OpenPCDet/blob/master/docs/GETTING_STARTED.md)来进行部署。但是由于需要使用**TensorRT**,需要对官方版本的网络进行一些客制化，我将我的修改版本上传至[**]，
 
+- **部署简单**
+   
+    本仓库在[**Autoware.ai/core_perception/lidar_point_pillars**](https://github.com/Autoware-AI/core_perception/tree/master/lidar_point_pillars)和[**Apollo/modules/perception/lidar/lib/detection/lidar_point_pillars**](https://github.com/ApolloAuto/apollo/tree/master/modules/perception/lidar/lib/detection/lidar_point_pillars)的基础上,修改了信息传递方式，删除了冗余的东西，增加了**MultiHead**功能。
 
 ## Usage
 ```bash
@@ -36,20 +40,7 @@ python viewer.py
   <img width="600" alt="fig_method" src=docs/src.png>
 </p>
 上图为PYTHON实现的demo ， 下图为C++实现的demo。
+
 ## Warning
 - yaml-cpp 编译是要用动态库模式
 
-
-## 存在及问题以及解决方案
-- 问题： 放在xavier上用不了！可能是因为xavier上的 `TensorRT 6.0.1`版本比较低导致
-    ```bash
-    While parsing node number 64 [Gather]:
-    3
-    ERROR: /home/nvidia/Opensource/onnx-tensorrt/builtin_op_importers.cpp:703 In function importGather:
-    [8] Assertion failed: !(data->getType() == nvinfer1::DataType::kINT32 && nbDims == 1) && "Cannot perform gather on a shape tensor!"
-    ERROR: failed to parse onnx file
-    ```
-   方案：使用`TensorRT 7.1.3`或者把下图黑框部分用c++写出来，不放在网络里面。问题所在截图，图中黑框部分。
-<p align="center">
-<img width="600" alt="fig_method" src=docs/bug_1.png>
-</p>
