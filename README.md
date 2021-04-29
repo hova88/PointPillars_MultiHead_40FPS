@@ -1,5 +1,5 @@
 # PointPillars
-高度优化的点云目标检测网络[PointPillars]。主要通过tensorrt对网络推理段进行了优化，通过cuda/c++对前处理后处理进行了优化。做到了真正的事实处理（前处理+后处理小于3ms）。
+**高度优化的点云目标检测网络[PointPillars]。主要通过tensorrt对网络推理段进行了优化，通过cuda/c++对前处理后处理进行了优化。做到了真正的事实处理（前处理+后处理小于3ms）。**
 
 ## Major Advance
 - **训练简单**
