@@ -332,7 +332,7 @@ void PointPillars::DoInference(const float* in_points_array,
           dev_sparse_pillar_map_, host_pillar_count_ ,
           dev_pfe_gather_feature_ );
     auto preprocess_end = std::chrono::high_resolution_clock::now();
-    DEVICE_SAVE<float>(dev_pfe_gather_feature_,  kMaxNumPillars * kMaxNumPointsPerPillar * kNumGatherPointFeature  , "0_Model_pfe_input_gather_feature");
+    // DEVICE_SAVE<float>(dev_pfe_gather_feature_,  kMaxNumPillars * kMaxNumPointsPerPillar * kNumGatherPointFeature  , "0_Model_pfe_input_gather_feature");
 
     // [STEP 3] : pfe forward
     cudaStream_t stream;
