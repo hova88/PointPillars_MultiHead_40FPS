@@ -1,0 +1,15 @@
+BoxFeature: 7
+ScoreThreshold: 0.1
+NmsOverlapThreshold: 0.2
+UseOnnx: false 
+
+PfeOnnx: ../model/cbgs_pp_multihead_pfe.onnx
+BackboneOnnx: ../model/cbgs_pp_multihead_backbone.onnx
+
+PfeTrt: ../model/cbgs_pp_multihead_pfe.trt
+BackboneTrt: ../model/cbgs_pp_multihead_backbone.trt
+
+ModelConfig: ../pointpillars/cfgs/cbgs_pp_multihead.yaml
+
+InputFile: ../test/testdata/raw_cloud.txt
+OutputFile: ../test/testdata/boxes.txt
