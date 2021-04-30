@@ -1,5 +1,5 @@
 # PointPillars
-**高度优化的点云目标检测网络[PointPillars]。主要通过tensorrt对网络推理段进行了优化，通过cuda/c++对前处理后处理进行了优化。做到了真正的事实处理（前处理+后处理小于3ms）。**
+**高度优化的点云目标检测网络[PointPillars](https://github.com/traveller59/second.pytorch)。主要通过tensorrt对网络推理段进行了优化，通过cuda/c++对前处理后处理进行了优化。做到了真正的事实处理（前处理+后处理小于3ms）。**
 
 ## Major Advance
 - **训练简单**
@@ -10,24 +10,41 @@
    
     本仓库在[**Autoware.ai/core_perception/lidar_point_pillars**](https://github.com/Autoware-AI/core_perception/tree/master/lidar_point_pillars)和[**Apollo/modules/perception/lidar/lib/detection/lidar_point_pillars**](https://github.com/ApolloAuto/apollo/tree/master/modules/perception/lidar/lib/detection/lidar_point_pillars)的基础上,修改了信息传递方式，删除了冗余的东西，增加了**MultiHead**功能。
 
+
+
 ## Usage
 ```bash
-mkdir build && cd build
-cmake ..
-make -j8 && ./test/test_model
+
 ```
 
 ## Result
 ```bash
+------------------------------------------------------------------
+>>>>                                                          >>>>
+                                                                  
+Input filename:   ../model/cbgs_pp_multihead_pfe.trt
+                                                                  
+>>>>                                                          >>>>
+------------------------------------------------------------------
+                                                                  
+                                                                  
+------------------------------------------------------------------
+>>>>                                                          >>>>
+                                                                  
+Input filename:   ../model/cbgs_pp_multihead_backbone.trt
+                                                                  
+>>>>                                                          >>>>
+------------------------------------------------------------------
+                                                                  
 ------------------------------------
 Module        Time        
 ------------------------------------
-Preprocess    0.35306  ms
-Pfe           0.201473 ms
-Scatter       0.00389  ms
-Backbone      13.8364  ms
-Postprocess   1.03954  ms
-Summary       15.439   ms
+Preprocess    0.459405 ms
+Pfe           4.2454   ms
+Scatter       0.007755 ms
+Backbone      15.5444  ms
+Postprocess   7.21689  ms
+Summary       27.4806  ms
 ------------------------------------
 ```
 ## Visualization
@@ -36,11 +53,8 @@ cd tools
 python viewer.py
 ```
 <p align="left">
-  <img width="600" alt="fig_method" src=docs/python.png>
-  <img width="600" alt="fig_method" src=docs/src.png>
+  <img width="1200" alt="fig_method" src=docs/demo.png>
 </p>
-上图为PYTHON实现的demo ， 下图为C++实现的demo。
 
-## Warning
-- yaml-cpp 编译是要用动态库模式
+**左图为本仓库实现的demo，右图为OpenPCdet实现的demo**
 
