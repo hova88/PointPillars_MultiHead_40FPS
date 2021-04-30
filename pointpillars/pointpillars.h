@@ -30,12 +30,18 @@
  * limitations under the License.
  */
 
+/**
+ * @author Kosuke Murakami
+ * @date 2019/02/26
+ */
 
 /**
 * @author Yan haixu
 * Contact: just github.com/hova88
 * @date 2021/04/30
 */
+
+
 #pragma once
 
 // headers in STL

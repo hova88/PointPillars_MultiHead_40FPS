@@ -30,14 +30,10 @@
  * limitations under the License.
  */
 
-
 /**
- * @file preprocess_points_cuda.h
- * @brief GPU version of preprocess points
  * @author Kosuke Murakami
  * @date 2019/02/26
  */
-
 
 /**
 * @author Yan haixu
