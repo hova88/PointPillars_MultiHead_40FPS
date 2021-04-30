@@ -49,20 +49,6 @@ void Boxes2Txt( std::vector<float> boxes , string file_name , int num_feature = 
     return ;
 };
 
-TEST(PointPillars, __points_array__) {
-
-  std::string file_name ="../test/testdata/raw_cloud.txt";
-  float* points_array;
-  int in_num_points;
-  in_num_points = Txt2Arrary(points_array,file_name,5);
-  EXPECT_FLOAT_EQ(63624, in_num_points);
-  EXPECT_FLOAT_EQ(-0.04419935122132301, points_array[0]);
-  EXPECT_FLOAT_EQ(-0.3708479702472687, points_array[1]);
-  EXPECT_FLOAT_EQ(1.5506199598312378, points_array[2]);
-  EXPECT_FLOAT_EQ(0.0, points_array[3]);
-  EXPECT_FLOAT_EQ(0.0, points_array[4]);
-};
-
 TEST(PointPillars, __build_model__) {
 
   const std::string DB_CONF = "../bootstrap.yaml";
