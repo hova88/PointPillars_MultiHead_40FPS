@@ -11,5 +11,5 @@ BackboneTrt: ../model/cbgs_pp_multihead_backbone.trt
 
 ModelConfig: ../pointpillars/cfgs/cbgs_pp_multihead.yaml
 
-InputFile: ../test/testdata/raw_cloud.txt
+InputFile: ../test/testdata/nuscenes_10sweeps_points.txt
 OutputFile: ../test/testdata/boxes.txt
