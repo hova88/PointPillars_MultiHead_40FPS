@@ -4,6 +4,11 @@ Written by Shaoshuai Shi
 All Rights Reserved 2019-2020.
 */
 
+/**
+* @author Yan haixu
+* Contact: just github.com/hova88
+* @date 2021/04/30
+*/
 
 #include <stdio.h>
 #include "nms.h"

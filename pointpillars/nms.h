@@ -1,4 +1,10 @@
 
+/**
+* @author Yan haixu
+* Contact: just github.com/hova88
+* @date 2021/04/30
+*/
+
 class NmsCuda {
  private:
   const int num_threads_;
