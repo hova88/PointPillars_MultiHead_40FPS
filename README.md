@@ -1,14 +1,21 @@
+
+**English** | [**简体中文**](README_zh-CN.md)
+
 # PointPillars
-**高度优化的点云目标检测网络[PointPillars](https://github.com/traveller59/second.pytorch)。主要通过tensorrt对网络推理段进行了优化，通过cuda/c++对前处理后处理进行了优化。做到了真正的事实处理（前处理+后处理小于 1 ms/Head）。**
+**High performance version of 3D object detection network -[PointPillars](https://github.com/traveller59/second.pytorch), which can achieve the real-time processing (less than 1 ms / head)**
+1. The inference part of **PointPillars**(pfe , backbone(multihead)) is optimized by tensorrt
+2. The pre- and post- processing are optimized by CUDA / C + recode.
 
 ## Major Advance
-- **训练简单**
+- **Easy to train**
   
-    本仓库直接使用[**mmlab/OpenPCdet**](https://github.com/open-mmlab/OpenPCDet)进行训练。所以只要你按照[**官方教程**](https://github.com/open-mmlab/OpenPCDet/blob/master/docs/GETTING_STARTED.md)的教程是非常容易训练自己的数据，也可以直接采用**官方训练参数**来进行部署。但是由于需要使用**TensorRT**,需要对官方版本的网络进行一些客制化，我将我的修改版本上传至[*hova88/OpenPCdet*](https://github.com/hova88/OpenPCDet)。
+    - this repo directly uses [**mmlab/OpenPCdet**](https://github.com/open-mmlab/OpenPCDet) for training. Therefore, as long as you follow the steps of the [**official tutorial**](https://github.com/open-mmlab/OpenPCDet/blob/master/docs/GETTING_STARTED.md), it is very easy to train your own data. In addition, you can directly use [**official weight(PointPillar-MultiHead)**](https://drive.google.com/file/d/1p-501mTWsq0G9RzroTWSXreIMyTUUpBM/view?usp=sharing) for deployment. Due to the need to use **Tensorrt**, the official **mmlab/OpenPCdet** still needs to be customized. I will upload my modified version to [**hova88/OpenPCdet**](https://github.com/hova88/OpenPCDet).
 
-- **部署简单**
+
+- **Easy to deploy**
    
-    本仓库在[**Autoware.ai/core_perception/lidar_point_pillars**](https://github.com/Autoware-AI/core_perception/tree/master/lidar_point_pillars)和[**Apollo/modules/perception/lidar/lib/detection/lidar_point_pillars**](https://github.com/ApolloAuto/apollo/tree/master/modules/perception/lidar/lib/detection/lidar_point_pillars)的基础上,修改了信息传递方式，删除了冗余的东西，增加了**MultiHead**功能。
+    - On the basis of [**Autoware.ai/core_perception/lidar_point_pillars**](https://github.com/Autoware-AI/core_perception/tree/master/lidar_point_pillars) and [**Apollo/modules/perception/lidar/lib/detection/lidar_point_pillars**](https://github.com/ApolloAuto/apollo/tree/master/modules/perception/lidar/lib/detection/lidar_point_pillars), this repo improves the way of information transmission, removes redundant things and adds **MultiHead** feature in postprocess.
+
 
 
 ## Requirements (My Environment)
@@ -20,11 +27,11 @@
   
 ### For algorithm: 
 * Linux Ubuntu 18.04
-* CMake 3.17 (版本太低的话cmakelists.txth会找不到cuda)
+* CMake 3.17 
 * CUDA 10.2
-* TensorRT 7.1.3 (7以下是不行的)
+* TensorRT 7.1.3 
 * yaml-cpp
-* google-test (非必须)
+* google-test (not necessary)
 
 ### For visualization
 * [open3d](https://github.com/intel-isl/Open3D)
@@ -32,7 +39,7 @@
 
 ## Usage
 
-0. **下载两个工程,并解决环境问题**
+1. **clone thest two repositories, and make sure the dependences is complete**
    ```bash
    mkdir workspace && cd workspace
    git clone https://github.com/hova88/PointPillars_MultiHead_40FPS.git --recursive && cd ..
@@ -40,22 +47,23 @@
    ```
 
 
-1. **获取 Engine File**
+2. **generate engine file**
 
-    - 1.1 **Pytorch model --> ONNX model :** 具体转换教程，我放在了[**hova88/OpenPCdet**]((https://github.com/hova88/OpenPCDet))的**change log**里面。
+    - 1.1 **Pytorch model --> ONNX model :** The specific conversion tutorial, i have put in the **change log** of [**hova88/OpenPCdet**]((https://github.com/hova88/OpenPCDet)).
         * [cbgs_pp_multihead_pfe.onnx](https://drive.google.com/file/d/1iEXjWBPzVr8YVWDA38eCGqk0wQoIrTKD/view?usp=sharing)
         * [cbgs_pp_multihead_backbone.onnx](https://drive.google.com/file/d/19mW-GXjilcRSHiq-hgSVdu5GOefx-1yR/view?usp=sharing)
 
-    - 1.2 **ONNX model --> TensorRT model :** 安装[onnx2trt](https://github.com/onnx/onnx-tensorrt)之后，就非常简单。注意，想要加速推理速度，一定要用半精度/混合精度，即（-d 16)
+    - 1.2 **ONNX model --> TensorRT model :** after install the [onnx2trt](https://github.com/onnx/onnx-tensorrt), things become very simple. Note that if you want to further improve the the inference speed, you must use half precision or mixed precision(like ,-d 16)
         ```bash
             onnx2trt cbgs_pp_multihead_pfe.onnx -o cbgs_pp_multihead_pfe.trt -b 1 -d 16 
             onnx2trt cbgs_pp_multihead_backbone.onnx -o cbgs_pp_multihead_backbone.trt -b 1 -d 16 
         ```
 
-    - 1.3 **engine file --> algorithm :** 在`bootstrap.yaml`, 指明你生成的两组engine file (*.onnx , *.trt)的路径。 
-    - 1.4 下载测试点云[nuscenes_10sweeps_points.txt](https://drive.google.com/file/d/1enCbjwe4giwGC-x7Wjns4eHx2njZW2Jl/view?usp=sharing) ，并在`bootstrap.yaml`指明输入（clouds）与输出(boxes)路径。
+    - 1.3 **engine file --> algorithm :** Specified the path of engine files(*.onnx , *.trt) in`bootstrap.yaml`.
+  
+    - 1.4 Download the test pointcloud [nuscenes_10sweeps_points.txt](https://drive.google.com/file/d/1enCbjwe4giwGC-x7Wjns4eHx2njZW2Jl/view?usp=sharing), and specified the path in `bootstrap.yaml`.
 
-2. **编译**
+3. **Compiler**
 
     ```bash
     cd PointPillars_MultiHead_40FPS
@@ -63,13 +71,13 @@
     cmake .. && make -j8 && ./test/test_model
     ```
 
-3. **可视化**
+4. **Visualization**
 
     ```bash
     cd PointPillars_MultiHead_40FPS/tools
     python viewer.py
     ```
-**左图为本仓库实现的demo，右图为OpenPCdet实现的demo**
+**Left figure shows the results of this repo, Right figure shows the official result of [**mmlab/OpenPCdet**](https://github.com/open-mmlab/OpenPCDet).**
 <p align="left">
   <img width="2000" alt="fig_method" src=docs/demo.png>
 </p>
