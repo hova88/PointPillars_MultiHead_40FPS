@@ -142,6 +142,7 @@ Summary       27.4806  ms
 ------------------------------------
 ```
 
+# License
 
-
-
+GNU General Public License v3.0 or later
+See [`COPYING`](LICENSE.md) to see the full text.
