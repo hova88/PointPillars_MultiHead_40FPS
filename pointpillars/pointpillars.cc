@@ -415,6 +415,7 @@ void PointPillars::DoInference(const float* in_points_array,
           dev_num_points_per_pillar_, dev_pillar_point_feature_, dev_pillar_coors_,
           dev_sparse_pillar_map_, host_pillar_count_ ,
           dev_pfe_gather_feature_ );
+    cudaDeviceSynchronize();
     auto preprocess_end = std::chrono::high_resolution_clock::now();
     // DEVICE_SAVE<float>(dev_pfe_gather_feature_,  kMaxNumPillars * kMaxNumPointsPerPillar * kNumGatherPointFeature  , "0_Model_pfe_input_gather_feature");
 
@@ -426,6 +427,7 @@ void PointPillars::DoInference(const float* in_points_array,
                             kMaxNumPillars * kMaxNumPointsPerPillar * kNumGatherPointFeature * sizeof(float), ///kNumGatherPointFeature
                             cudaMemcpyDeviceToDevice, stream));
     pfe_context_->enqueueV2(pfe_buffers_, stream, nullptr);
+    cudaDeviceSynchronize();
     auto pfe_end = std::chrono::high_resolution_clock::now();
     // DEVICE_SAVE<float>(reinterpret_cast<float*>(pfe_buffers_[1]),  kMaxNumPillars * 64 , "1_Model_pfe_output_buffers_[1]");
 
@@ -434,6 +436,7 @@ void PointPillars::DoInference(const float* in_points_array,
     scatter_cuda_ptr_->DoScatterCuda(
         host_pillar_count_[0], dev_x_coors_, dev_y_coors_,
         reinterpret_cast<float*>(pfe_buffers_[1]), dev_scattered_feature_);
+    cudaDeviceSynchronize();
     auto scatter_end = std::chrono::high_resolution_clock::now();   
     // DEVICE_SAVE<float>(dev_scattered_feature_ ,  kRpnInputSize,"2_Model_backbone_input_dev_scattered_feature");
 
@@ -443,7 +446,7 @@ void PointPillars::DoInference(const float* in_points_array,
                             kBatchSize * kRpnInputSize * sizeof(float),
                             cudaMemcpyDeviceToDevice, stream));
     backbone_context_->enqueueV2(rpn_buffers_, stream, nullptr);
-    cudaStreamSynchronize(stream);
+    cudaDeviceSynchronize();
     auto backbone_end = std::chrono::high_resolution_clock::now();
     // DEVICE_SAVE<float>(reinterpret_cast<float*>(rpn_buffers_[1]) ,  kNumAnchorPerCls    ,"3_rpn_buffers_[1]");
     // DEVICE_SAVE<float>(reinterpret_cast<float*>(rpn_buffers_[2]) ,  kNumAnchorPerCls * 4,"3_rpn_buffers_[2]");
@@ -466,6 +469,7 @@ void PointPillars::DoInference(const float* in_points_array,
         reinterpret_cast<float*>(rpn_buffers_[7]), // [boxes] kNumAnchorPerCls * kNumClass * kNumOutputBoxFeature
         dev_filtered_box_, dev_filtered_score_, dev_filter_count_,
         *out_detections, *out_labels , *out_scores);
+    cudaDeviceSynchronize();
     auto postprocess_end = std::chrono::high_resolution_clock::now();
 
     // release the stream and the buffers
