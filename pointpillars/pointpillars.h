@@ -209,6 +209,12 @@ class PointPillars {
     void DeviceMemoryMalloc();
 
     /**
+     * @brief Memory set to 0 for device memory
+     * @details Called in the DoInference
+     */
+    void SetDeviceMemoryToZero();
+
+    /**
      * @brief Initializing paraments from pointpillars.yaml
      * @details Called in the constructor
      */

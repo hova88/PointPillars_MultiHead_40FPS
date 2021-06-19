@@ -251,6 +251,42 @@ void PointPillars::DeviceMemoryMalloc() {
 
 }
 
+void PointPillars::SetDeviceMemoryToZero() {
+
+    GPU_CHECK(cudaMemset(dev_num_points_per_pillar_, 0, kMaxNumPillars * sizeof(float)));
+    GPU_CHECK(cudaMemset(dev_x_coors_,               0, kMaxNumPillars * sizeof(int)));
+    GPU_CHECK(cudaMemset(dev_y_coors_,               0, kMaxNumPillars * sizeof(int)));
+    GPU_CHECK(cudaMemset(dev_pillar_point_feature_,  0, kMaxNumPillars * kMaxNumPointsPerPillar * kNumPointFeature * sizeof(float)));
+    GPU_CHECK(cudaMemset(dev_pillar_coors_,          0, kMaxNumPillars * 4 * sizeof(float)));
+    // GPU_CHECK(cudaMemset(dev_sparse_pillar_map_,     0, kNumIndsForScan * kNumIndsForScan * sizeof(int)));
+    GPU_CHECK(cudaMemset(dev_pfe_gather_feature_,    0, kMaxNumPillars * kMaxNumPointsPerPillar * kNumGatherPointFeature * sizeof(float)));
+    
+    // GPU_CHECK(cudaMemset(pfe_buffers_[0],       0, kMaxNumPillars * kMaxNumPointsPerPillar * kNumGatherPointFeature * sizeof(float)));
+    // GPU_CHECK(cudaMemset(pfe_buffers_[1],       0, kMaxNumPillars * 64 * sizeof(float)));
+
+    GPU_CHECK(cudaMemset(dev_scattered_feature_,    0, kNumThreads * kGridYSize * kGridXSize * sizeof(float)));
+    
+    // GPU_CHECK(cudaMemset(rpn_buffers_[0],    0, kRpnInputSize * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[1],    0, kNumAnchorPerCls * kNumOutputBoxFeature * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[2],    0, kNumAnchorPerCls     * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[3],    0, kNumAnchorPerCls * 2 * kNumOutputBoxFeature * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[4],    0, kNumAnchorPerCls * 4 * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[5],    0, kNumAnchorPerCls * kNumOutputBoxFeature * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[6],    0, kNumAnchorPerCls     * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[7],    0, kNumAnchorPerCls * 2 * kNumOutputBoxFeature * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[8],    0, kNumAnchorPerCls * 4 * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[9],    0, kNumAnchorPerCls * kNumOutputBoxFeature * sizeof(float)));
+    // GPU_CHECK(cudaMemset(rpn_buffers_[10],   0, kNumAnchorPerCls     * sizeof(float)));
+
+    GPU_CHECK(cudaMemset(dev_filtered_box_,     0, kNumAnchor * kNumOutputBoxFeature * sizeof(float)));
+    GPU_CHECK(cudaMemset(dev_filtered_score_,   0, kNumAnchor * sizeof(float)));
+    GPU_CHECK(cudaMemset(dev_filter_count_,     0, kNumClass * sizeof(int)));
+}
+
+
+
+
+
 void PointPillars::InitTRT(const bool use_onnx) {
   if (use_onnx_) {
     // create a TensorRT model from the onnx model and load it into an engine
@@ -360,6 +396,8 @@ void PointPillars::DoInference(const float* in_points_array,
                                 std::vector<int>* out_labels,
                                 std::vector<float>* out_scores) 
 {
+    SetDeviceMemoryToZero();
+    cudaDeviceSynchronize();
     // [STEP 1] : load pointcloud
     float* dev_points;
     GPU_CHECK(cudaMalloc(reinterpret_cast<void**>(&dev_points),
