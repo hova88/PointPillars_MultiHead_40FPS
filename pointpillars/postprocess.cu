@@ -51,6 +51,19 @@
 #include <stdio.h>
 
 
+// sigmoid_filter_warp
+__device__ void box_decode_warp(int head_offset, const float* box_pred, 
+    int tid , int num_anchors_per_head , int counter, float* filtered_box) 
+{
+    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred[ head_offset + tid * 9 + 0];
+    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred[ head_offset + tid * 9 + 1];
+    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred[ head_offset + tid * 9 + 2];
+    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred[ head_offset + tid * 9 + 3];
+    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred[ head_offset + tid * 9 + 4];
+    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred[ head_offset + tid * 9 + 5];
+    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred[ head_offset + tid * 9 + 6];
+}
+
 
 __global__ void sigmoid_filter_kernel(
 
@@ -131,113 +144,44 @@ __global__ void sigmoid_filter_kernel(
     {
         int counter = atomicAdd(&filter_count[blockIdx.z], 1);
         if ( blockIdx.z == 0) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_0[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_0[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_0[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_0[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_0[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_0[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_0[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_0 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else
         if ( blockIdx.z == 1) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_1[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_1[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_1[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_1[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_1[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_1[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_1[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_1 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else
         if ( blockIdx.z == 2) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_1[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_1[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_1[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_1[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_1[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_1[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_1[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_1 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else
         if ( blockIdx.z == 3) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_3[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_3[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_3[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_3[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_3[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_3[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_3[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_3 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else 
         if (blockIdx.z == 4) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_3[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_3[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_3[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_3[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_3[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_3[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_3[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_3 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];            
         }else
         if ( blockIdx.z == 5) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_5[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_5[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_5[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_5[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_5[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_5[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_5[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_5 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else
         if ( blockIdx.z == 6) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_6[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_6[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_6[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_6[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_6[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_6[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_6[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_6 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else
         if ( blockIdx.z == 7) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_6[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_6[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_6[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_6[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_6[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_6[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_6[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_6 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else
         if ( blockIdx.z == 8) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_8[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_8[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_8[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_8[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_8[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_8[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_8[ tid * 9 + 6];
 
+            box_decode_warp(0 ,box_pred_8 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }else
         if ( blockIdx.z == 9) {
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_8[ tid * 9 + 0];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_8[ tid * 9 + 1];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_8[ tid * 9 + 2];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_8[ tid * 9 + 3];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_8[ tid * 9 + 4];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_8[ tid * 9 + 5];
-            filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_8[ tid * 9 + 6];
-
+            box_decode_warp(0 ,box_pred_8 , tid , num_anchors_per_head , counter , filtered_box);
             filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
         }
     }
@@ -246,91 +190,35 @@ __global__ void sigmoid_filter_kernel(
             int counter = atomicAdd(&filter_count[blockIdx.z], 1);
             // printf("counter : %d \n" , counter);
             if (blockIdx.z == 1) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_2[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_2[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_2[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_2[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_2[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_2[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_2[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_2 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }else 
             if (blockIdx.z == 2) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_2[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_2[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_2[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_2[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_2[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_2[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_2[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_2 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }else 
             if (blockIdx.z == 3) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_4[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_4[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_4[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_4[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_4[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_4[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_4[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_4 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }else 
             if (blockIdx.z == 4) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_4[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_4[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_4[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_4[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_4[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_4[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_4[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_4 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }else 
             if (blockIdx.z == 6) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_7[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_7[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_7[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_7[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_7[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_7[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_7[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_7 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }else 
             if (blockIdx.z == 7) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_7[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_7[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_7[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_7[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_7[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_7[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_7[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_7 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }else 
             if (blockIdx.z == 8) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_9[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_9[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_9[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_9[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_9[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_9[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_9[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_9 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }else 
             if (blockIdx.z == 9) {
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred_9[ tid * 9 + 0];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred_9[ tid * 9 + 1];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred_9[ tid * 9 + 2];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred_9[ tid * 9 + 3];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred_9[ tid * 9 + 4];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred_9[ tid * 9 + 5];
-                filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred_9[ tid * 9 + 6];
-        
+                box_decode_warp(0 ,box_pred_9 , tid , num_anchors_per_head , counter , filtered_box);
                 filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
             }
     }
