@@ -77,18 +77,25 @@ TEST(PointPillars, __build_model__) {
   int in_num_points;
   in_num_points = Txt2Arrary(points_array,file_name,5);
  
-  std::vector<float> out_detections;
-  std::vector<int> out_labels;
-  std::vector<float> out_scores;
-  
-  cudaDeviceSynchronize();
-  pp.DoInference(points_array, in_num_points, &out_detections, &out_labels , &out_scores);
-  cudaDeviceSynchronize();
-  int BoxFeature = 7;
-  int num_objects = out_detections.size() / BoxFeature;
 
-  std::string boxes_file_name = config["OutputFile"].as<std::string>();
-  Boxes2Txt(out_detections , boxes_file_name );
-  EXPECT_EQ(num_objects,228);
+  
+  for (int _ = 0 ; _ < 10 ; _++)
+  {
+
+    std::vector<float> out_detections;
+    std::vector<int> out_labels;
+    std::vector<float> out_scores;
+
+    cudaDeviceSynchronize();
+    pp.DoInference(points_array, in_num_points, &out_detections, &out_labels , &out_scores);
+    cudaDeviceSynchronize();
+    int BoxFeature = 7;
+    int num_objects = out_detections.size() / BoxFeature;
+
+    std::string boxes_file_name = config["OutputFile"].as<std::string>();
+    Boxes2Txt(out_detections , boxes_file_name );
+    EXPECT_EQ(num_objects,228);
+  }
+
 
 };
