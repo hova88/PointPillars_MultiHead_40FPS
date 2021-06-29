@@ -151,35 +151,35 @@ __global__ void pillar_mean_kernel(
   const float* dev_pillar_point_feature, 
   const float* dev_num_points_per_pillar, 
   int max_pillars , 
-  int max_points_pre_pillar) {
-  __shared__ float temp[32 * 3];
-  int ith_pillar = blockIdx.x; 
-  int ith_point  = threadIdx.x;
-  int axis = threadIdx.y;
-  if (threadIdx.x < 16) {                                       
-      temp[threadIdx.x * 3 + axis] =  dev_pillar_point_feature[ith_pillar * max_points_pre_pillar * num_point_feature + ith_point * num_point_feature + axis];
-      temp[(threadIdx.x + 16) * 3 + axis] = 0.0f;   //--> dummy  placeholds which will set as 0
-  } else {                                                          
-      temp[threadIdx.x * 3 + axis] =  dev_pillar_point_feature[ith_pillar * max_points_pre_pillar * num_point_feature + ith_point * num_point_feature + axis];
-  }
-  __syncthreads();
-int num_points_at_this_pillar = dev_num_points_per_pillar[ith_pillar];
+  int max_points_per_pillar) {
 
-  if (ith_point >= num_points_at_this_pillar) {
-      return;
-  }
-
-  for (unsigned int d = 32 >> 1 ; d > 0.6; d >>= 1) {
-
-  if (ith_point < d) {
-      temp[ith_point*3 +axis] += temp[(ith_point + d) * 3 + axis];
+    extern __shared__ float temp[];
+    int ith_pillar = blockIdx.x; 
+    int ith_point  = threadIdx.x;
+    int axis = threadIdx.y;
+  
+    int reduce_size = max_points_per_pillar > 32 ? 64 : 32;
+    temp[threadIdx.x * 3 + axis] =  dev_pillar_point_feature[ith_pillar * max_points_per_pillar * num_point_feature + ith_point * num_point_feature + axis];  
+    if (threadIdx.x < reduce_size - max_points_per_pillar) {
+        temp[(threadIdx.x + max_points_per_pillar) * 3 + axis] = 0.0f; //--> dummy placeholds will set as 0
     }
-      __syncthreads();
-  }
+    __syncthreads();
+    int num_points_at_this_pillar = dev_num_points_per_pillar[ith_pillar];
 
-  if (ith_point == 0) {
-      dev_points_mean[ith_pillar * 3 + axis] = temp[ith_point + axis] / num_points_at_this_pillar ;
-  }
+    if (ith_point >= num_points_at_this_pillar) {
+          return;
+    }
+
+    for (unsigned int d = reduce_size >> 1 ; d > 0.6; d >>= 1) {
+        if (ith_point < d) {
+            temp[ith_point*3 +axis] += temp[(ith_point + d) * 3 + axis];
+        }
+        __syncthreads();
+    }
+
+    if (ith_point == 0) {
+        dev_points_mean[ith_pillar * 3 + axis] = temp[ith_point + axis] / num_points_at_this_pillar ;
+    }
 }
 
 
@@ -382,7 +382,7 @@ void PreprocessPointsCuda::DoPreprocessPointsCuda(
 
     dim3 mean_block(max_num_points_per_pillar_,3); //(32,3)
 
-    pillar_mean_kernel<<<host_pillar_count[0],mean_block,32 * 3 *sizeof(float)>>>(
+    pillar_mean_kernel<<<host_pillar_count[0],mean_block,64 * 3 *sizeof(float)>>>(
       dev_points_mean_  ,num_point_feature_, dev_pillar_point_feature, dev_num_points_per_pillar, 
         max_num_pillars_ , max_num_points_per_pillar_);
 
