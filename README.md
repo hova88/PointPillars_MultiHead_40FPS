@@ -50,8 +50,8 @@
 2. **generate engine file**
 
     - 1.1 **Pytorch model --> ONNX model :** The specific conversion tutorial, i have put in the **change log** of [**hova88/OpenPCdet**]((https://github.com/hova88/OpenPCDet)).
-        * [cbgs_pp_multihead_pfe.onnx](https://drive.google.com/file/d/1iEXjWBPzVr8YVWDA38eCGqk0wQoIrTKD/view?usp=sharing)
-        * [cbgs_pp_multihead_backbone.onnx](https://drive.google.com/file/d/19mW-GXjilcRSHiq-hgSVdu5GOefx-1yR/view?usp=sharing)
+        * [cbgs_pp_multihead_pfe.onnx](https://drive.google.com/file/d/1gQWtBZ4vfrSmv2nToSIarr-d7KkEWqxw/view?usp=sharing)
+        * [cbgs_pp_multihead_backbone.onnx](https://drive.google.com/file/d/1dvUkjvhE0GEWvf6GchSGg8-lwukk7bTw/view?usp=sharing)
 
     - 1.2 **ONNX model --> TensorRT model :** after install the [onnx2trt](https://github.com/onnx/onnx-tensorrt), things become very simple. Note that if you want to further improve the the inference speed, you must use half precision or mixed precision(like ,-d 16)
         ```bash
@@ -61,7 +61,7 @@
 
     - 1.3 **engine file --> algorithm :** Specified the path of engine files(*.onnx , *.trt) in`bootstrap.yaml`.
   
-    - 1.4 Download the test pointcloud [nuscenes_10sweeps_points.txt](https://drive.google.com/file/d/1enCbjwe4giwGC-x7Wjns4eHx2njZW2Jl/view?usp=sharing), and specified the path in `bootstrap.yaml`.
+    - 1.4 Download the test pointcloud [nuscenes_10sweeps_points.txt](https://drive.google.com/file/d/1KD0LT0kzcpGUysUu__dfnfYnHUW62iwN/view?usp=sharing), and specified the path in `bootstrap.yaml`.
 
 3. **Compiler**
 
