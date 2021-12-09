@@ -380,5 +380,6 @@ void PostprocessCuda::DoPostprocessCuda(
 
         GPU_CHECK(cudaFree(dev_indexes));
         GPU_CHECK(cudaFree(dev_sorted_filtered_box));
+        GPU_CHECK(cudaFree(dev_sorted_filtered_scores));
     }
 }

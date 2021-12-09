@@ -490,6 +490,7 @@ void PointPillars::DoInference(const float* in_points_array,
         std::cout << setiosflags(ios::left) << setw(14) << Modules[i]  << setw(8)  << Times[i] * 1000 << " ms" << resetiosflags(ios::left) << std::endl;
     }
     std::cout << "------------------------------------" << std::endl;
+    GPU_CHECK(cudaFree(dev_points));
     cudaStreamDestroy(stream);
 
 }
