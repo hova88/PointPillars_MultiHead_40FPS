@@ -50,199 +50,39 @@
 #include "postprocess.h"
 #include <stdio.h>
 
-
-// sigmoid_filter_warp
-__device__ void box_decode_warp(int head_offset, const float* box_pred, 
-    int tid , int num_anchors_per_head , int counter, float* filtered_box) 
-{
-    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 0] = box_pred[ head_offset + tid * 9 + 0];
-    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 1] = box_pred[ head_offset + tid * 9 + 1];
-    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 2] = box_pred[ head_offset + tid * 9 + 2];
-    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 3] = box_pred[ head_offset + tid * 9 + 3];
-    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 4] = box_pred[ head_offset + tid * 9 + 4];
-    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 5] = box_pred[ head_offset + tid * 9 + 5];
-    filtered_box[blockIdx.z * num_anchors_per_head * 7  + counter * 7 + 6] = box_pred[ head_offset + tid * 9 + 6];
-}
-
-
-__global__ void sigmoid_filter_kernel(
-
-    float* cls_pred_0,
-    float* cls_pred_12,
-    float* cls_pred_34,
-    float* cls_pred_5,
-    float* cls_pred_67,
-    float* cls_pred_89,
-
-    const float* box_pred_0,
-
-    const float* box_pred_1,
-    const float* box_pred_2,
-
-    const float* box_pred_3,
-    const float* box_pred_4,
-
-    const float* box_pred_5,
-
-    const float* box_pred_6,
-    const float* box_pred_7,
-
-    const float* box_pred_8,
-    const float* box_pred_9,
-
-    float* filtered_box, 
-    float* filtered_score, 
-    int* filter_count,
-
-    const float score_threshold) {   
-
-    // cls_pred_34 
-    // 32768*2 , 2
-
-    int num_anchors_per_head = gridDim.x * gridDim.y * blockDim.x;
-    // 16 * 4 * 512 = 32768
-    extern __shared__ float cls_score[];
-    cls_score[threadIdx.x + blockDim.x] = -1.0f;
-
-    int tid = blockIdx.x * gridDim.y * blockDim.x + blockIdx.y *  blockDim.x + threadIdx.x; 
-
-
-    if ( blockIdx.z == 0) cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_0[ tid ]));
-    if ( blockIdx.z == 1) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_12[ tid * 2 ]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_12[ (num_anchors_per_head + tid) * 2]));}
-    if ( blockIdx.z == 2) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_12[ tid * 2 + 1]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_12[ (num_anchors_per_head + tid) * 2 + 1]));}
-
-    if ( blockIdx.z == 3) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_34[ tid * 2 ]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_34[ (num_anchors_per_head + tid) * 2]));}
-    if ( blockIdx.z == 4) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_34[ tid * 2 + 1 ]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_34[ (num_anchors_per_head + tid) * 2 + 1]));}
-
-    if ( blockIdx.z == 5) cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_5[ tid ]));
-
-    if ( blockIdx.z == 6) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_67[ tid * 2 ]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_67[ (num_anchors_per_head + tid) * 2]));}
-    if ( blockIdx.z == 7) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_67[ tid * 2 + 1 ]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_67[ (num_anchors_per_head + tid) * 2 + 1]));}
-
-    if ( blockIdx.z == 8) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_89[ tid * 2 ]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_89[ (num_anchors_per_head + tid) * 2]));}
-    if ( blockIdx.z == 9) {
-        cls_score[ threadIdx.x ] = 1 / (1 + expf(-cls_pred_89[ tid * 2 + 1 ]));
-        cls_score[ threadIdx.x + blockDim.x] = 1 / (1 + expf(-cls_pred_89[ (num_anchors_per_head + tid) * 2 + 1]));}
-    
-    __syncthreads();
-    
-    if( cls_score[ threadIdx.x ] > score_threshold) 
+template <typename T>
+void swap_warp(T& a , T& b , T& swp){ swp=a; a=b; b=swp;}
+void quicksort_warp(float* score, int* index, int start,int end){
+    if (start>=end) return ;
+    float pivot=score[end];
+    float value_swp;
+    int index_swp;
+    //set a pointer to divide array into two parts
+    //one part is smaller than pivot and another larger
+    int pointer=start;
+    for (int i = start; i < end; i++) 
     {
-        int counter = atomicAdd(&filter_count[blockIdx.z], 1);
-        if ( blockIdx.z == 0) {
-            box_decode_warp(0 ,box_pred_0 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else
-        if ( blockIdx.z == 1) {
-            box_decode_warp(0 ,box_pred_1 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else
-        if ( blockIdx.z == 2) {
-            box_decode_warp(0 ,box_pred_1 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else
-        if ( blockIdx.z == 3) {
-            box_decode_warp(0 ,box_pred_3 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else 
-        if (blockIdx.z == 4) {
-            box_decode_warp(0 ,box_pred_3 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];            
-        }else
-        if ( blockIdx.z == 5) {
-            box_decode_warp(0 ,box_pred_5 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else
-        if ( blockIdx.z == 6) {
-            box_decode_warp(0 ,box_pred_6 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else
-        if ( blockIdx.z == 7) {
-            box_decode_warp(0 ,box_pred_6 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else
-        if ( blockIdx.z == 8) {
-
-            box_decode_warp(0 ,box_pred_8 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-        }else
-        if ( blockIdx.z == 9) {
-            box_decode_warp(0 ,box_pred_8 , tid , num_anchors_per_head , counter , filtered_box);
-            filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
+        if (score[i] > pivot) {
+            if (pointer!=i) {
+                //swap score[i] with score[pointer]
+                //score[pointer] behind larger than pivot
+                swap_warp<float>(score[i] , score[pointer] , value_swp) ;
+                swap_warp<int>(index[i] , index[pointer] , index_swp) ;
+            }
+            pointer++;
         }
     }
-    __syncthreads();  
-    if( cls_score[ threadIdx.x + blockDim.x ] > score_threshold)  {     
-            int counter = atomicAdd(&filter_count[blockIdx.z], 1);
-            // printf("counter : %d \n" , counter);
-            if (blockIdx.z == 1) {
-                box_decode_warp(0 ,box_pred_2 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }else 
-            if (blockIdx.z == 2) {
-                box_decode_warp(0 ,box_pred_2 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }else 
-            if (blockIdx.z == 3) {
-                box_decode_warp(0 ,box_pred_4 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }else 
-            if (blockIdx.z == 4) {
-                box_decode_warp(0 ,box_pred_4 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }else 
-            if (blockIdx.z == 6) {
-                box_decode_warp(0 ,box_pred_7 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }else 
-            if (blockIdx.z == 7) {
-                box_decode_warp(0 ,box_pred_7 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }else 
-            if (blockIdx.z == 8) {
-                box_decode_warp(0 ,box_pred_9 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }else 
-            if (blockIdx.z == 9) {
-                box_decode_warp(0 ,box_pred_9 , tid , num_anchors_per_head , counter , filtered_box);
-                filtered_score[blockIdx.z * num_anchors_per_head + counter] = cls_score[ threadIdx.x ];
-            }
-    }
+    //swap back pivot to proper position
+    swap_warp<float>(score[end] , score[pointer] , value_swp) ;
+    swap_warp<int>(index[end] , index[pointer] , index_swp) ;
+    quicksort_warp(score,index,start,pointer-1);
+    quicksort_warp(score,index,pointer+1,end);
+    return ;
 }
 
-__global__ void sort_boxes_by_indexes_kernel(float* filtered_box, float* filtered_scores, int* indexes, int filter_count,
-    float* sorted_filtered_boxes, float* sorted_filtered_scores,
-    const int num_output_box_feature)
+void quicksort_kernel(float* score, int* indexes, int len )
 {
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if(tid < filter_count)  {
-
-        int sort_index = indexes[tid];
-        sorted_filtered_boxes[tid * num_output_box_feature + 0] = filtered_box[sort_index * num_output_box_feature + 0];
-        sorted_filtered_boxes[tid * num_output_box_feature + 1] = filtered_box[sort_index * num_output_box_feature + 1];
-        sorted_filtered_boxes[tid * num_output_box_feature + 2] = filtered_box[sort_index * num_output_box_feature + 2];
-        sorted_filtered_boxes[tid * num_output_box_feature + 3] = filtered_box[sort_index * num_output_box_feature + 3];
-        sorted_filtered_boxes[tid * num_output_box_feature + 4] = filtered_box[sort_index * num_output_box_feature + 4];
-        sorted_filtered_boxes[tid * num_output_box_feature + 5] = filtered_box[sort_index * num_output_box_feature + 5];
-        sorted_filtered_boxes[tid * num_output_box_feature + 6] = filtered_box[sort_index * num_output_box_feature + 6];
-
-        // sorted_filtered_dir[tid] = filtered_dir[sort_index];
-        sorted_filtered_scores[tid] = filtered_scores[sort_index];
-    }
+    quicksort_warp(score,indexes ,0,len-1);
 }
 
 
@@ -284,101 +124,190 @@ void PostprocessCuda::DoPostprocessCuda(
 
     const float* box_preds,
    
-    float* dev_filtered_box, 
-    float* dev_filtered_score, 
-    int* dev_filter_count,
+    float* host_box, 
+    float* host_score, 
+    int* host_filtered_count,
+
     std::vector<float>& out_detection, std::vector<int>& out_label , std::vector<float>& out_score) {
-    // 在此之前，先进行rpn_box_output的concat. 
-    // 128x128 的feature map， cls_pred 的shape为（32768，1），（32768,1），（32768,1），（65536,2），（32768，1）
-    dim3 gridsize(16, 4 , 10);  //16 *  4  * 512  = 32768 代表一个head的anchors
-    sigmoid_filter_kernel<<< gridsize, 512 , 512 * 2 * sizeof(float)>>>(
-        cls_pred_0,
-        cls_pred_12, 
-        cls_pred_34, 
-        cls_pred_5, 
-        cls_pred_67, 
-        cls_pred_89,
-
-        &box_preds[0 * 32768 * 9],
-        &box_preds[1 * 32768 * 9],
-        &box_preds[2 * 32768 * 9],
-        &box_preds[3 * 32768 * 9],
-        &box_preds[4 * 32768 * 9],
-        &box_preds[5 * 32768 * 9],
-        &box_preds[6 * 32768 * 9],
-        &box_preds[7 * 32768 * 9],
-        &box_preds[8 * 32768 * 9],
-        &box_preds[9 * 32768 * 9],
-
-        dev_filtered_box, 
-        dev_filtered_score,  
-        dev_filter_count, 
     
-        score_threshold_);
-    cudaDeviceSynchronize();
+    // class_map as {0, 12 , 34 , 5 ,67 ,89}
+    // class_map can be designed as a variable(list , dict , ...), which can flexibly adapt to 
+    // the changes of openpcdet's multihead structure
+    // ......
+    // but, i think the {A,BC,D,EF ,...}-like-head-structure is meaningless 
+    // This design does not simplify the calculation, but increases the amount of data
+    // so ,i prefer to use {A,B,C,D,E,F,...}-like-head-structure to do multi task
+    // For TensorRT , the same structure head should be layer-fused more efficiently~! 
     
-    int host_filter_count[num_class_] = {0};
-    GPU_CHECK(cudaMemcpy(host_filter_count, dev_filter_count, num_class_ * sizeof(int), cudaMemcpyDeviceToHost));
     
-    for (int i = 0; i < num_class_; ++ i) {
-        if(host_filter_count[i] <= 0) continue;
+    //num_anchor_per_cls_ = 32768
+    GPU_CHECK(cudaMemcpy(&host_score[0 * num_anchor_per_cls_], cls_pred_0, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+    GPU_CHECK(cudaMemcpy(&host_score[1 * num_anchor_per_cls_], cls_pred_12, num_anchor_per_cls_ * 2 * 2 * sizeof(float), cudaMemcpyDeviceToHost));
+    GPU_CHECK(cudaMemcpy(&host_score[5 * num_anchor_per_cls_], cls_pred_34, num_anchor_per_cls_ * 2 * 2 * sizeof(float), cudaMemcpyDeviceToHost));
+    GPU_CHECK(cudaMemcpy(&host_score[9 * num_anchor_per_cls_], cls_pred_5, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+    GPU_CHECK(cudaMemcpy(&host_score[10 * num_anchor_per_cls_], cls_pred_67, num_anchor_per_cls_ * 2 * 2 * sizeof(float), cudaMemcpyDeviceToHost));
+    GPU_CHECK(cudaMemcpy(&host_score[14 * num_anchor_per_cls_], cls_pred_89, num_anchor_per_cls_ * 2 * 2 * sizeof(float), cudaMemcpyDeviceToHost));
+    int stride[10] = {0 , 1 , 1 , 5 , 5 , 9 , 10 , 10 , 14 , 14};
+    int offset[10] = {0 , 0 , 1 , 0 , 1 , 0 , 0 , 1 , 0 , 1};
 
-        int* dev_indexes;
-        float* dev_sorted_filtered_box;
-        float* dev_sorted_filtered_scores;
-        GPU_CHECK(cudaMalloc((void**)&dev_indexes, host_filter_count[i] * sizeof(int)));
-        GPU_CHECK(cudaMalloc((void**)&dev_sorted_filtered_box, host_filter_count[i] * num_output_box_feature_ * sizeof(float)));
-        GPU_CHECK(cudaMalloc((void**)&dev_sorted_filtered_scores, host_filter_count[i]*sizeof(float)));
-        // GPU_CHECK(cudaMalloc((void**)&dev_sorted_box_for_nms, NUM_BOX_CORNERS_*host_filter_count[i]*sizeof(float)));
-        thrust::sequence(thrust::device, dev_indexes, dev_indexes + host_filter_count[i]);
-        thrust::sort_by_key(thrust::device, 
-                            &dev_filtered_score[i * num_anchor_per_cls_], 
-                            &dev_filtered_score[i * num_anchor_per_cls_ + host_filter_count[i]],
-                            dev_indexes, 
-                            thrust::greater<float>());
-
-        const int num_blocks = DIVUP(host_filter_count[i], num_threads_);
-
-        sort_boxes_by_indexes_kernel<<<num_blocks, num_threads_>>>(
-            &dev_filtered_box[i * num_anchor_per_cls_ * num_output_box_feature_], 
-            &dev_filtered_score[i * num_anchor_per_cls_], 
-            dev_indexes, 
-            host_filter_count[i],
-            dev_sorted_filtered_box, 
-            dev_sorted_filtered_scores,
-            num_output_box_feature_);
-
-        int num_box_for_nms = min(nms_pre_maxsize_, host_filter_count[i]);
-        long* keep_inds = new long[num_box_for_nms];  // index of kept box
-        memset(keep_inds, 0, num_box_for_nms * sizeof(int));
-        int num_out = 0;
-        nms_cuda_ptr_->DoNmsCuda(num_box_for_nms, dev_sorted_filtered_box, keep_inds, &num_out);
-
-        num_out = min(num_out, nms_post_maxsize_);
-
-        float* host_filtered_box = new float[host_filter_count[i] * num_output_box_feature_]();
-        float* host_filtered_scores = new float[host_filter_count[i]]();
+    GPU_CHECK(cudaMemcpy(host_box, box_preds, num_class_ * num_anchor_per_cls_ * num_output_box_feature_ * sizeof(float), cudaMemcpyDeviceToHost));
+    
+    for (int class_idx = 0; class_idx < num_class_; ++ class_idx) {  // hardcode for class_map as {0, 12 , 34 , 5 ,67 ,89}
+        // init parameter
+        host_filtered_count[class_idx] = 0;
 
 
-        cudaMemcpy(host_filtered_box, dev_sorted_filtered_box, host_filter_count[i] * num_output_box_feature_ * sizeof(float), cudaMemcpyDeviceToHost);
-        cudaMemcpy(host_filtered_scores, dev_sorted_filtered_scores, host_filter_count[i] * sizeof(float), cudaMemcpyDeviceToHost);
-        for (int i = 0; i < num_out; ++i)  {
-            out_detection.emplace_back(host_filtered_box[keep_inds[i] * num_output_box_feature_ + 0]);
-            out_detection.emplace_back(host_filtered_box[keep_inds[i] * num_output_box_feature_ + 1]);
-            out_detection.emplace_back(host_filtered_box[keep_inds[i] * num_output_box_feature_ + 2]);
-            out_detection.emplace_back(host_filtered_box[keep_inds[i] * num_output_box_feature_ + 3]);
-            out_detection.emplace_back(host_filtered_box[keep_inds[i] * num_output_box_feature_ + 4]);
-            out_detection.emplace_back(host_filtered_box[keep_inds[i] * num_output_box_feature_ + 5]);
-            out_detection.emplace_back(host_filtered_box[keep_inds[i] * num_output_box_feature_ + 6]);
-            out_score.emplace_back(host_filtered_scores[keep_inds[i]]);
-            out_label.emplace_back(i);
+        // sigmoid filter
+        float host_filtered_score[nms_pre_maxsize_]; // 1000
+        float host_filtered_box[nms_pre_maxsize_ * 7]; // 1000 * 7
+        for (size_t anchor_idx = 0 ; anchor_idx < num_anchor_per_cls_ ; anchor_idx++)
+        {
+
+            float score_upper = 0;
+            float score_lower = 0;
+            if (class_idx == 0 || class_idx == 5 ) {
+                score_upper =  1 / (1 + expf(-host_score[ stride[class_idx] * num_anchor_per_cls_ + anchor_idx ])); // sigmoid function
+
+            }
+            else {
+                score_upper =  1 / (1 + expf(-host_score[ stride[class_idx] * num_anchor_per_cls_  + anchor_idx * 2  + offset[class_idx]]));
+                score_lower =  1 / (1 + expf(-host_score[ stride[class_idx] * num_anchor_per_cls_  + (num_anchor_per_cls_ + anchor_idx) * 2 + offset[class_idx]]));
+                // printf("up , low : %f ,%f \n", score_upper , score_lower);
+            }
+
+
+            if (score_upper > score_threshold_ && host_filtered_count[class_idx] < nms_pre_maxsize_)  // filter out boxes which threshold less than score_threshold
+            {
+                host_filtered_score[host_filtered_count[class_idx]] = score_upper;
+                for (size_t dim_idx = 0 ; dim_idx < 7 ; dim_idx++) // dim_idx = {x,y,z,dx,dy,dz,yaw}
+                { 
+                    host_filtered_box[host_filtered_count[class_idx] * 7 + dim_idx] \
+                    =  host_box[ class_idx * num_anchor_per_cls_ * num_output_box_feature_ + anchor_idx * num_output_box_feature_ + dim_idx];
+                }
+                host_filtered_count[class_idx] += 1;
+            }
+
+            if (score_lower > score_threshold_ && host_filtered_count[class_idx] < nms_pre_maxsize_)  // filter out boxes which threshold less than score_threshold
+            {
+                host_filtered_score[host_filtered_count[class_idx]] = score_lower;
+                for (size_t dim_idx = 0 ; dim_idx < 7 ; dim_idx++) // dim_idx = {x,y,z,dx,dy,dz}
+                { 
+                    host_filtered_box[host_filtered_count[class_idx] * 7 + dim_idx] \
+                    =  host_box[ class_idx * num_anchor_per_cls_ * num_output_box_feature_ + anchor_idx * num_output_box_feature_+ dim_idx];
+                }
+                host_filtered_count[class_idx] += 1;
+            }
 
         }
-        delete[] keep_inds;
-        delete[] host_filtered_scores;
-        delete[] host_filtered_box;
+        // printf("host_filter_count[%d] = %d\n", class_idx , host_filtered_count[class_idx]);
+        if(host_filtered_count[class_idx] <= 0) continue;
 
-        GPU_CHECK(cudaFree(dev_indexes));
+        // sort boxes (topk)
+        float host_sorted_filtered_box[host_filtered_count[class_idx] * 7];
+        float host_sorted_filtered_score[host_filtered_count[class_idx]];
+        int host_sorted_filtered_indexes[host_filtered_count[class_idx]];
+        for (int i = 0 ; i < host_filtered_count[class_idx] ; i++) {host_sorted_filtered_indexes[i] = i;}
+       
+
+        quicksort_kernel(host_filtered_score , host_sorted_filtered_indexes , host_filtered_count[class_idx]);
+        
+        for (int ith_box = 0 ; ith_box  < host_filtered_count[class_idx] ; ++ith_box) 
+        {
+            host_sorted_filtered_score[ith_box] = host_filtered_score[ith_box];
+            host_sorted_filtered_box[ith_box * 7 + 0] = host_filtered_box[host_sorted_filtered_indexes[ith_box] * 7 + 0];
+            host_sorted_filtered_box[ith_box * 7 + 1] = host_filtered_box[host_sorted_filtered_indexes[ith_box] * 7 + 1];
+            host_sorted_filtered_box[ith_box * 7 + 2] = host_filtered_box[host_sorted_filtered_indexes[ith_box] * 7 + 2];
+            host_sorted_filtered_box[ith_box * 7 + 3] = host_filtered_box[host_sorted_filtered_indexes[ith_box] * 7 + 3];
+            host_sorted_filtered_box[ith_box * 7 + 4] = host_filtered_box[host_sorted_filtered_indexes[ith_box] * 7 + 4];
+            host_sorted_filtered_box[ith_box * 7 + 5] = host_filtered_box[host_sorted_filtered_indexes[ith_box] * 7 + 5];
+            host_sorted_filtered_box[ith_box * 7 + 6] = host_filtered_box[host_sorted_filtered_indexes[ith_box] * 7 + 6];
+        }
+
+
+        // host to device for nms cuda
+        // In fact, this cuda calc is also not necessary. 
+        // After each category is filtered by sigmoid, there are only about 100, up to 1000 boxes left behind. 
+        // Use CUDA_NMS will never faster than CPU_NMS
+        // TODO : use cpu_nms replace cuda_nms
+        float* dev_sorted_filtered_box;
+        float* dev_sorted_filtered_score;
+
+        GPU_CHECK(cudaMalloc((void**)&dev_sorted_filtered_box, host_filtered_count[class_idx] * 7 * sizeof(float)));
+        GPU_CHECK(cudaMalloc((void**)&dev_sorted_filtered_score, host_filtered_count[class_idx] * sizeof(float)));
+        
+        GPU_CHECK(cudaMemcpy(dev_sorted_filtered_box,
+            host_sorted_filtered_box,
+            host_filtered_count[class_idx] *  7 * sizeof(float),
+            cudaMemcpyHostToDevice));  
+
+        GPU_CHECK(cudaMemcpy(dev_sorted_filtered_score,
+            host_sorted_filtered_score,
+            host_filtered_count[class_idx]  * sizeof(float),
+            cudaMemcpyHostToDevice));  
+
+    
+        int num_box_for_nms = min(nms_pre_maxsize_, host_filtered_count[class_idx]);
+        long keep_inds[num_box_for_nms]; // index of kept box
+        memset(keep_inds, 0, num_box_for_nms * sizeof(int));
+        
+        int det_num_boxes_per_class = 0;
+        nms_cuda_ptr_->DoNmsCuda(num_box_for_nms, dev_sorted_filtered_box, keep_inds, &det_num_boxes_per_class);
+        det_num_boxes_per_class = min(det_num_boxes_per_class, nms_post_maxsize_);
+        
+        // recopy to host
+        cudaMemcpy(host_sorted_filtered_box, dev_sorted_filtered_box, host_filtered_count[class_idx] * 7 * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpy(host_sorted_filtered_score, dev_sorted_filtered_score, host_filtered_count[class_idx] * sizeof(float), cudaMemcpyDeviceToHost);
+        
+        // int det_num_filtered_boxes_pre_class = 0;
+        for (int box_idx = 0; box_idx < det_num_boxes_per_class; ++box_idx)  {    
+            out_detection.emplace_back(host_sorted_filtered_box[keep_inds[box_idx] * 7 + 0]);
+            out_detection.emplace_back(host_sorted_filtered_box[keep_inds[box_idx] * 7 + 1]);
+            out_detection.emplace_back(host_sorted_filtered_box[keep_inds[box_idx] * 7 + 2]);
+            out_detection.emplace_back(host_sorted_filtered_box[keep_inds[box_idx] * 7 + 3]);
+            out_detection.emplace_back(host_sorted_filtered_box[keep_inds[box_idx] * 7 + 4]);
+            out_detection.emplace_back(host_sorted_filtered_box[keep_inds[box_idx] * 7 + 5]);
+            out_detection.emplace_back(host_sorted_filtered_box[keep_inds[box_idx] * 7 + 6]);
+            out_score.emplace_back(host_sorted_filtered_score[keep_inds[box_idx]]);
+            out_label.emplace_back(class_idx);
+        }
+  
         GPU_CHECK(cudaFree(dev_sorted_filtered_box));
+        GPU_CHECK(cudaFree(dev_sorted_filtered_score));
     }
 }
+
+
+
+
+
+// void PostprocessCuda::DoPostprocessCuda(
+//     float* cls_pred_0,
+//     float* cls_pred_12,
+//     float* cls_pred_34,
+//     float* cls_pred_5,
+//     float* cls_pred_67,
+//     float* cls_pred_89,
+
+//     const float* box_preds,
+   
+//     float* dev_filtered_box, 
+//     float* dev_filtered_score, 
+//     int* dev_filter_count,
+//     std::vector<float>& out_detection, std::vector<int>& out_label , std::vector<float>& out_score) {
+
+
+//     // GPU_CHECK(cudaMemcpy(&host_score[0 * 32768], cls_pred_0, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+//     // GPU_CHECK(cudaMemcpy(&host_score[1 * 32768], cls_pred_12, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+//     // GPU_CHECK(cudaMemcpy(&host_score[2 * 32768], cls_pred_34, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+//     // GPU_CHECK(cudaMemcpy(&host_score[3 * 32768], cls_pred_5, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+//     // GPU_CHECK(cudaMemcpy(&host_score[4 * 32768], cls_pred_5, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+//     // GPU_CHECK(cudaMemcpy(&host_score[5 * 32768], cls_pred_67, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+//     // GPU_CHECK(cudaMemcpy(&host_score[6 * 32768], cls_pred_89, num_anchor_per_cls_ * sizeof(float), cudaMemcpyDeviceToHost));
+
+//     // GPU_CHECK(cudaMemcpy(host_box, box_preds, num_class_ * num_anchor_per_cls_ * num_input_box_feature_ * sizeof(float), cudaMemcpyDeviceToHost));
+
+
+
+
+// }
+

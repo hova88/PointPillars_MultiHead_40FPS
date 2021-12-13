@@ -76,7 +76,7 @@ class Logger : public nvinfer1::ILogger {
   explicit Logger(Severity severity = Severity::kWARNING)
       : reportable_severity(severity) {}
 
-  void log(Severity severity, const char* msg) override {
+  void log(Severity severity, const char* msg) noexcept override {
     // suppress messages with severity enum value greater than the reportable
     if (severity > reportable_severity) return;
 
@@ -185,12 +185,16 @@ class PointPillars {
 
     float* dev_scattered_feature_;
 
-    float* dev_filtered_box_;
-    float* dev_filtered_score_;
-    int*   dev_filtered_label_;
-    int*   dev_filtered_dir_;
-    float* dev_box_for_nms_;
-    int*   dev_filter_count_;
+    float* host_box_;
+    float* host_score_;
+    int*   host_filtered_count_;
+
+    // float* dev_filtered_box_;
+    // float* dev_filtered_score_;
+    // int*   dev_filtered_label_;
+    // int*   dev_filtered_dir_;
+    // float* dev_box_for_nms_;
+    // int*   dev_filter_count_;
 
     std::unique_ptr<PreprocessPointsCuda> preprocess_points_cuda_ptr_;
     std::unique_ptr<ScatterCuda> scatter_cuda_ptr_;

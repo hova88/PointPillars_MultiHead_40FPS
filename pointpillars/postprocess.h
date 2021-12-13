@@ -118,8 +118,11 @@ class PostprocessCuda {
     float* cls_pred_89,
     
     const float* box_preds,
-    float* dev_filtered_box, 
-    float* dev_filtered_score, 
-    int* dev_filter_count,
+
+    float* host_box, 
+    float* host_score, 
+    int* host_filtered_count,
+    
+    
     std::vector<float>& out_detection, std::vector<int>& out_label , std::vector<float>& out_score);
 };
