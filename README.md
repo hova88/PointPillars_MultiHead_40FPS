@@ -84,72 +84,70 @@
 
 ## Result
 
-### Use *.onnx engine file
-```bash
-----------------------------------------------------------------
-Input filename:   ../model/cbgs_pp_multihead_pfe.onnx
-ONNX IR version:  0.0.6
-Opset version:    12
-Producer name:    pytorch
-Producer version: 1.7
-Domain:           
-Model version:    0
-Doc string:       
-----------------------------------------------------------------
-WARNING: [TRT]/home/hova/onnx-tensorrt/onnx2trt_utils.cpp:220: Your ONNX model has been generated with INT64 weights, while TensorRT does not natively support INT64. Attempting to cast down to INT32.
-----------------------------------------------------------------
-Input filename:   ../model/cbgs_pp_multihead_backbone.onnx
-ONNX IR version:  0.0.6
-Opset version:    10
-Producer name:    pytorch
-Producer version: 1.7
-Domain:           
-Model version:    0
-Doc string:       
-----------------------------------------------------------------
-------------------------------------
-Module        Time        
-------------------------------------
-Preprocess    0.455046 ms
-Pfe           0.319025 ms
-Scatter       0.004159 ms
-Backbone      33.1782  ms
-Postprocess   7.17682  ms
-Summary       41.1385  ms
-------------------------------------
-```
+### Use *.trt engine file  on NVIDIA GeForce RTX 3080 Ti 
 
-### Use *.trt engine file 
+**with the ScoreThreshold = 0.1**
 ```bash
-------------------------------------------------------------------
->>>>                                                          >>>>
+ |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣> 
+ | ../model/cbgs_pp_multihead_pfe.trt >
+ |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿> 
+             (\__/) ||                 
+             (•ㅅ•) ||                 
+             / 　 づ                                                         
                                                                   
-Input filename:   ../model/cbgs_pp_multihead_pfe.trt
-                                                                  
->>>>                                                          >>>>
-------------------------------------------------------------------
-                                                                  
-                                                                  
-------------------------------------------------------------------
->>>>                                                          >>>>
-                                                                  
-Input filename:   ../model/cbgs_pp_multihead_backbone.trt
-                                                                  
->>>>                                                          >>>>
-------------------------------------------------------------------
+ |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣> 
+ | ../model/cbgs_pp_multihead_backbone.trt >
+ |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿> 
+             (\__/) ||                 ****
+             (•ㅅ•) ||                 
+             / 　 づ     
                                                                   
 ------------------------------------
 Module        Time        
 ------------------------------------
-Preprocess    0.459405 ms
-Pfe           4.2454   ms
-Scatter       0.007755 ms
-Backbone      15.5444  ms
-Postprocess   7.21689  ms
-Summary       27.4806  ms
+Preprocess    0.571069 ms
+Pfe           3.26203  ms
+Scatter       0.384075 ms
+Backbone      2.92882  ms
+Postprocess   8.82032  ms
+Summary       15.9707  ms
 ------------------------------------
 ```
 
+
+**with the ScoreThreshold = 0.4**
+```bash
+ |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣> 
+ | ../model/cbgs_pp_multihead_pfe.trt >
+ |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿> 
+             (\__/) ||                 
+             (•ㅅ•) ||                 
+             / 　 づ                                                         
+                                                                  
+ |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣> 
+ | ../model/cbgs_pp_multihead_backbone.trt >
+ |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿> 
+             (\__/) ||                 ****
+             (•ㅅ•) ||                 
+             / 　 づ     
+                                                                  
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.337111 ms
+Pfe           2.81834  ms
+Scatter       0.161953 ms
+Backbone      3.64112  ms
+Postprocess   4.34731  ms
+Summary       11.3101  ms
+------------------------------------
+```
+
+### Runtime logs
+- 1. [ScoreThreshold = 0.1](runtime_log_0.1.txt)
+- 2. [ScoreThreshold = 0.2](runtime_log_0.2.txt)
+- 3. [ScoreThreshold = 0.3](runtime_log_0.3.txt)
+- 4. [ScoreThreshold = 0.4](runtime_log_0.4.txt)
 # License
 
 GNU General Public License v3.0 or later

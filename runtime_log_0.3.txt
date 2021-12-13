@@ -1,0 +1,177 @@
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from PointPillars
+[ RUN      ] PointPillars.__build_model__
+../model/cbgs_pp_multihead_backbone.trt
+ |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣> 
+ | ../model/cbgs_pp_multihead_pfe.trt >
+ |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿> 
+             (\__/) ||                 
+             (•ㅅ•) ||                 
+             / 　 づ                    
+ |￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣> 
+ | ../model/cbgs_pp_multihead_backbone.trt >
+ |＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿> 
+             (\__/) ||                 
+             (•ㅅ•) ||                 
+             / 　 づ                    
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.344357 ms
+Pfe           3.57581  ms
+Scatter       0.494278 ms
+Backbone      3.54523  ms
+Postprocess   4.7853   ms
+Summary       12.75    ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 50
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.361747 ms
+Pfe           2.70562  ms
+Scatter       0.163871 ms
+Backbone      3.49934  ms
+Postprocess   4.92798  ms
+Summary       11.6624  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 51
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.342862 ms
+Pfe           2.70695  ms
+Scatter       0.167529 ms
+Backbone      2.94182  ms
+Postprocess   5.47535  ms
+Summary       11.6386  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 50
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.348322 ms
+Pfe           2.71012  ms
+Scatter       0.161943 ms
+Backbone      2.93115  ms
+Postprocess   4.71274  ms
+Summary       10.8685  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 50
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.834654 ms
+Pfe           3.25877  ms
+Scatter       0.424758 ms
+Backbone      3.14531  ms
+Postprocess   4.7146   ms
+Summary       12.3824  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 50
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.34287  ms
+Pfe           2.70598  ms
+Scatter       0.162908 ms
+Backbone      3.47064  ms
+Postprocess   4.91449  ms
+Summary       11.6022  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 50
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.344437 ms
+Pfe           2.70913  ms
+Scatter       0.164227 ms
+Backbone      2.93732  ms
+Postprocess   5.28866  ms
+Summary       11.4489  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 51
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.345868 ms
+Pfe           2.70673  ms
+Scatter       0.165532 ms
+Backbone      2.94166  ms
+Postprocess   4.68391  ms
+Summary       10.8485  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 51
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.345713 ms
+Pfe           3.42451  ms
+Scatter       0.378013 ms
+Backbone      2.93691  ms
+Postprocess   4.76644  ms
+Summary       11.8553  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 51
+  228
+------------------------------------
+Module        Time        
+------------------------------------
+Preprocess    0.345226 ms
+Pfe           3.29311  ms
+Scatter       0.166997 ms
+Backbone      3.60765  ms
+Postprocess   4.88104  ms
+Summary       12.2991  ms
+------------------------------------
+/home/hova/repo/PointPillars_MultiHead_40FPS/test/pointpillars_test.cc:97: Failure
+Expected equality of these values:
+  num_objects
+    Which is: 50
+  228
+[  FAILED  ] PointPillars.__build_model__ (1458 ms)
+[----------] 1 test from PointPillars (1458 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (1458 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] PointPillars.__build_model__
+
+ 1 FAILED TEST
